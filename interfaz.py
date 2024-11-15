@@ -69,15 +69,8 @@ class FinanzasApp(QWidget):
         self.mostrar_datos()
 
     def mostrar_datos(self):
+        """Muestra los datos de ingresos y gastos en la tabla."""
+        # Limpiar la tabla
         self.tabla.clear()
         self.tabla.setRowCount(0)
-        self.tabla.setColumnCount(4)
-        self.tabla.setHorizontalHeaderLabels(['Tipo', 'Cantidad', 'Fecha', 'Categoría'])
-        
-        # Aquí podrías agregar código para leer y mostrar los ingresos y gastos desde la base de datos.
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ventana = FinanzasApp()
-    ventana.show()
-    sys.exit(app.exec_())
+        self.tabla
