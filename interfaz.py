@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QDateEdit, QFormLayout, QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import QDate
-from base import BaseDeDatos
+from base import BaseDeDatos  # Asegúrate de que BaseDeDatos está correctamente implementada
 
 class FinanzasApp(QWidget):
     def __init__(self):
@@ -55,22 +55,55 @@ class FinanzasApp(QWidget):
         self.layout.addWidget(self.tabla)
 
     def agregar_ingreso(self):
-        cantidad = float(self.campo_cantidad_ingreso.text())
-        fecha = self.campo_fecha_ingreso.date().toString('yyyy-MM-dd')
-        self.db.agregar_ingreso(1, cantidad, fecha)  # 1 es el id del usuario
-        self.mostrar_datos()
+        try:
+            cantidad = float(self.campo_cantidad_ingreso.text())
+            fecha = self.campo_fecha_ingreso.date().toString('yyyy-MM-dd')
+            self.db.agregar_ingreso(1, cantidad, fecha)  # 1 es el id del usuario
+            self.mostrar_datos()
+        except ValueError:
+            print("Por favor ingresa una cantidad válida.")
 
     def agregar_gasto(self):
-        cantidad = float(self.campo_cantidad_gasto.text())
-        categoria = self.campo_categoria_gasto.text()
-        fecha = self.campo_fecha_gasto.date().toString('yyyy-MM-dd')
-        es_pequeño = self.campo_gasto_pequeño.text() == 'True'
-        self.db.agregar_gasto(1, cantidad, categoria, es_pequeño, fecha)  # 1 es el id del usuario
-        self.mostrar_datos()
+        try:
+            cantidad = float(self.campo_cantidad_gasto.text())
+            categoria = self.campo_categoria_gasto.text()
+            fecha = self.campo_fecha_gasto.date().toString('yyyy-MM-dd')
+            es_pequeño = self.campo_gasto_pequeño.text() == 'True'
+            self.db.agregar_gasto(1, cantidad, categoria, es_pequeño, fecha)  # 1 es el id del usuario
+            self.mostrar_datos()
+        except ValueError:
+            print("Por favor ingresa datos válidos para el gasto.")
 
     def mostrar_datos(self):
-        """Muestra los datos de ingresos y gastos en la tabla."""
-        # Limpiar la tabla
         self.tabla.clear()
         self.tabla.setRowCount(0)
-        self.tabla
+        self.tabla.setColumnCount(4)
+        self.tabla.setHorizontalHeaderLabels(['Tipo', 'Cantidad', 'Fecha', 'Categoría'])
+
+        # Obtener datos de la base de datos
+        ingresos = self.db.obtener_ingresos(1)  # Método que debes implementar
+        gastos = self.db.obtener_gastos(1)  # Método que debes implementar
+
+        # Mostrar los datos de ingresos
+        for ingreso in ingresos:
+            row_position = self.tabla.rowCount()
+            self.tabla.insertRow(row_position)
+            self.tabla.setItem(row_position, 0, QTableWidgetItem("Ingreso"))
+            self.tabla.setItem(row_position, 1, QTableWidgetItem(str(ingreso['cantidad'])))
+            self.tabla.setItem(row_position, 2, QTableWidgetItem(ingreso['fecha']))
+            self.tabla.setItem(row_position, 3, QTableWidgetItem("N/A"))
+
+        # Mostrar los datos de gastos
+        for gasto in gastos:
+            row_position = self.tabla.rowCount()
+            self.tabla.insertRow(row_position)
+            self.tabla.setItem(row_position, 0, QTableWidgetItem("Gasto"))
+            self.tabla.setItem(row_position, 1, QTableWidgetItem(str(gasto['cantidad'])))
+            self.tabla.setItem(row_position, 2, QTableWidgetItem(gasto['fecha']))
+            self.tabla.setItem(row_position, 3, QTableWidgetItem(gasto['categoria']))
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ventana = FinanzasApp()
+    ventana.show()
+    sys.exit(app.exec_())
