@@ -48,11 +48,11 @@ class FinanceApp(QMainWindow):
         self.notifications.iniciar_notificaciones(usuario_id=1)
 
     def open_income_dialog(self):
-        dialog = IngresoGastoDialog("Ingreso", self)
+        dialog = IngresosGastos("Ingreso", self)
         dialog.exec_()
 
     def open_expense_dialog(self):
-        dialog = IngresoGastoDialog("Gasto", self)
+        dialog = IngresosGastos("Gasto", self)
         dialog.exec_()
 
     def show_analysis(self):
