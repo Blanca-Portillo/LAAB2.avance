@@ -15,9 +15,26 @@ class AnalisisCategoria:
         total_gastos = df_gastos['Total'].sum()
 
         # Crear el gráfico de pastel (pie chart) para la distribución de gastos
-        fig, ax = plt.subplots(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(20, 20))
 
-        ax.pie(df_gastos['Total'], labels=df_gastos['Categoria'], autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+        # Generar el gráfico de pastel
+        wedges, texts, autotexts = ax.pie(df_gastos['Total'], 
+                                          labels=df_gastos['Categoria'], 
+                                          autopct='%1.1f%%', 
+                                          startangle=90, 
+                                          colors=plt.cm.Paired.colors,
+                                          wedgeprops={"edgecolor": "black"})  # Borde para cada segmento
+
+        # Ajustar las propiedades de las etiquetas y los porcentajes
+        for text in texts:
+            text.set_fontsize(11)  # Tamaño de la fuente de las etiquetas
+            text.set_fontweight('bold')  # Fuente en negrita
+
+        for autotext in autotexts:
+            autotext.set_fontsize(11)  # Tamaño de la fuente de los porcentajes
+            autotext.set_color('white')  # Color blanco para que se vea bien sobre el pastel
+
+        # Añadir título
         ax.set_title(f"Distribución de Gastos\nTotal Gastado: ${total_gastos:,.2f}")
 
         # Mostrar el gráfico de pastel
