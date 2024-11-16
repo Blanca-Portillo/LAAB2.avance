@@ -1,14 +1,14 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget,
-                             QLineEdit, QDialog, QLabel, QFormLayout, QMessageBox)
+                             QLineEdit, QDialog, QLabel, QFormLayout, QMessageBox, QTableWidget, QTableWidgetItem)
 import re  # Para validar la fecha
 from base import BaseDeDatos
 from ingreso import IngresosGastos
 from graficos import AnalisisCategoria
 from alertas import Notificaciones
 from datetime import datetime
-import matplotlib.pyplot as plt
-
+from PyQt5.QtCore import QTimer  # Importar el temporizador
+from PyQt5.QtGui import QPixmap
 
 class IngresoGastoDialog(QDialog):
     def __init__(self, tipo, parent=None):
@@ -39,7 +39,7 @@ class IngresoGastoDialog(QDialog):
 
         layout.addRow(self.submit_button, self.cancel_button)
         self.setLayout(layout)
-        self.setStyleSheet(r"""
+        self.setStyleSheet("""
             QDialog {
                 background-color: rgba(255, 255, 255, 200);
                 border-radius: 10px;
@@ -71,7 +71,7 @@ class IngresoGastoDialog(QDialog):
                 background-color: #388e3c;
             }
         """)
-        self.setFixedSize(400, 250)
+        self.setFixedSize(400, 250)  # Establecer un tamaño fijo y no redimensionable
 
     def submit_data(self):
         try:
@@ -116,54 +116,67 @@ class ProgresoMensualDialog(QDialog):
         self.setWindowTitle("Progreso Mensual")
         self.initUI()
 
+        # Configurar el temporizador
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.actualizar_progreso)
+        self.timer.start(1000)  # Actualización cada 1 segundo
+
+        self.ingresos = 0
+        self.gastos = 0
+
     def initUI(self):
         layout = QVBoxLayout()
         self.progreso_label = QLabel("Cargando progreso mensual...")
         layout.addWidget(self.progreso_label)
         self.setLayout(layout)
-        self.setFixedSize(400, 200)
+        self.setFixedSize(400, 200)  # Establecer un tamaño fijo y no redimensionable
 
     def mostrar_progreso(self, ingresos, gastos):
-        self.progreso_label.setText(f"Ingresos: ${ingresos}\nGastos: ${gastos}")
+        self.ingresos = ingresos
+        self.gastos = gastos
+        self.progreso_label.setText(f"Ingresos: ${self.ingresos}\nGastos: ${self.gastos}")
+
+    def actualizar_progreso(self):
+        mes_actual = datetime.now().month
+        self.ingresos = self.parent().ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
+        self.gastos = self.parent().ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
+        self.progreso_label.setText(f"Ingresos: ${self.ingresos}\nGastos: ${self.gastos}")
+
+    def closeEvent(self, event):
+        """Detener el temporizador cuando el diálogo se cierre."""
+        self.timer.stop()
+        super().closeEvent(event)
 
 
-class AnalisisCategoria:
-    def __init__(self, bd):
-        self.bd = bd
-
-    def mostrar_grafico(self):
-        # Ejemplo de gráfico de barras con categorías de gasto
-        categorias = ['Comida', 'Transporte', 'Entretenimiento', 'Salud']
-        valores = [100, 50, 75, 20]  # Valores de ejemplo
-
-        plt.bar(categorias, valores)
-        plt.title("Análisis de Gastos por Categoría")
-        plt.xlabel("Categoría")
-        plt.ylabel("Cantidad")
-        plt.show()
-
-
-class SugerenciasAhorroDialog(QDialog):
+class AnalisisGastosDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Sugerencias de Ahorro y Metas")
+        self.setWindowTitle("Análisis Detallado de Gastos")
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
-        
-        self.sugerencias_label = QLabel("Calculando sugerencias de ahorro...")
-        layout.addWidget(self.sugerencias_label)
 
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Fecha", "Categoría", "Cantidad", "Gasto Pequeño"])
+
+        # Cargar datos de los gastos
+        self.cargar_datos()
+
+        layout.addWidget(self.table)
         self.setLayout(layout)
-        self.setFixedSize(400, 200)
+        self.setFixedSize(600, 400)  # Establecer un tamaño fijo y no redimensionable
 
-    def mostrar_sugerencias(self, ingresos, gastos):
-        ahorro_sugerido = ingresos - gastos
-        if ahorro_sugerido > 0:
-            self.sugerencias_label.setText(f"Puedes ahorrar ${ahorro_sugerido} este mes.")
-        else:
-            self.sugerencias_label.setText("Considera reducir tus gastos para ahorrar más.")
+    def cargar_datos(self):
+        gastos = self.parent().ingresos_gastos.obtener_gastos(usuario_id=1)
+        self.table.setRowCount(len(gastos))
+
+        for row, gasto in enumerate(gastos):
+            self.table.setItem(row, 0, QTableWidgetItem(gasto["fecha"]))
+            self.table.setItem(row, 1, QTableWidgetItem(gasto["categoria"]))
+            self.table.setItem(row, 2, QTableWidgetItem(str(gasto["cantidad"])))
+            self.table.setItem(row, 3, QTableWidgetItem(str(gasto["es_gasto_pequeno"])))
 
 
 class FinanceApp(QMainWindow):
@@ -184,51 +197,54 @@ class FinanceApp(QMainWindow):
         self.income_button = QPushButton("Registrar Ingreso")
         self.expense_button = QPushButton("Registrar Gasto")
         self.analysis_button = QPushButton("Análisis de Gastos")
+        self.analysis_detail_button = QPushButton("Análisis Detallado de Gastos")
         self.progress_button = QPushButton("Ver Progreso Mensual")
-        self.savings_button = QPushButton("Ver Sugerencias de Ahorro y Metas")
 
         self.income_button.clicked.connect(self.open_income_dialog)
         self.expense_button.clicked.connect(self.open_expense_dialog)
         self.analysis_button.clicked.connect(self.show_analysis)
+        self.analysis_detail_button.clicked.connect(self.show_detailed_analysis)
         self.progress_button.clicked.connect(self.show_monthly_progress)
-        self.savings_button.clicked.connect(self.show_savings_suggestions)
 
         layout.addWidget(self.income_button)
         layout.addWidget(self.expense_button)
         layout.addWidget(self.analysis_button)
+        layout.addWidget(self.analysis_detail_button)
         layout.addWidget(self.progress_button)
-        layout.addWidget(self.savings_button)
 
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-        self.setStyleSheet(r"""
+        # Establecer imagen de fondo
+        background = QPixmap('C:\homero.jpg')  # Ruta de la imagen
+        background_label = QLabel(self)
+        background_label.setPixmap(background)
+        background_label.setGeometry(0, 0, self.width(), self.height())
+        background_label.setScaledContents(True)
+
+        self.setStyleSheet("""
             QMainWindow {
-                background-image: url('C:/homero.jpg');  
-                background-position: center;
-                background-repeat: no-repeat;
-                background-size: cover;
+                background-color: rgba(255, 255, 255, 150);
             }
             QPushButton {
-                background-color: rgba(98, 0, 234, 0.8);
+                font-size: 16px;
+                background-color: #4CAF50;
                 color: white;
                 border: none;
-                padding: 15px;
-                font-size: 18px;
+                padding: 10px 20px;
                 border-radius: 5px;
-                margin-bottom: 15px;
+                margin-top: 10px;
             }
             QPushButton:hover {
-                background-color: rgba(55, 0, 179, 0.8);
+                background-color: #45a049;
             }
             QPushButton:pressed {
-                background-color: rgba(3, 218, 197, 0.8);
+                background-color: #388e3c;
             }
         """)
 
-        self.setFixedSize(600, 400)
-        self.notifications.iniciar_notificaciones(usuario_id=1)
+        self.setFixedSize(400, 400)  # Establecer un tamaño fijo y no redimensionable
 
     def open_income_dialog(self):
         dialog = IngresoGastoDialog("Ingreso", self)
@@ -239,26 +255,21 @@ class FinanceApp(QMainWindow):
         dialog.exec_()
 
     def show_analysis(self):
-        self.analisis.mostrar_grafico()  # Mostrar el gráfico de análisis
+        dialog = self.analisis.mostrar_analisis(self)
+        dialog.exec_()
+
+    def show_detailed_analysis(self):
+        dialog = AnalisisGastosDialog(self)
+        dialog.exec_()
 
     def show_monthly_progress(self):
         dialog = ProgresoMensualDialog(self)
-        mes_actual = datetime.now().month
-        ingresos = self.ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
-        gastos = self.ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
-        dialog.mostrar_progreso(ingresos, gastos)
-        dialog.exec_()
-
-    def show_savings_suggestions(self):
-        dialog = SugerenciasAhorroDialog(self)
-        mes_actual = datetime.now().month
-        ingresos = self.ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
-        gastos = self.ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
-        dialog.mostrar_sugerencias(ingresos, gastos)
+        dialog.mostrar_progreso(self.ingresos_gastos.obtener_ingresos_mes(1, datetime.now().month), 
+                                self.ingresos_gastos.obtener_gastos_mes(1, datetime.now().month))
         dialog.exec_()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = FinanceApp()
     window.show()
