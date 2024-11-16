@@ -32,7 +32,7 @@ class AnalisisCategoria:
 
         for autotext in autotexts:
             autotext.set_fontsize(11)  # Tamaño de la fuente de los porcentajes
-            autotext.set_color('white')  # Color blanco para que se vea bien sobre el pastel
+            autotext.set_color('red')  # Color blanco para que se vea bien sobre el pastel
 
         # Añadir título
         ax.set_title(f"Distribución de Gastos\nTotal Gastado: ${total_gastos:,.2f}")
