@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget,
                              QLineEdit, QDialog, QLabel, QFormLayout, QMessageBox)
-import re
+import re  # Para validar la fecha
 from base import BaseDeDatos
 from ingreso import IngresosGastos
 from graficos import AnalisisCategoria
@@ -19,7 +19,7 @@ class IngresoGastoDialog(QDialog):
         layout = QFormLayout()
 
         self.cantidad_input = QLineEdit()
-        self.fecha_input = QLineEdit()
+        self.fecha_input = QLineEdit()   
 
         layout.addRow(QLabel("Cantidad:"), self.cantidad_input)
         layout.addRow(QLabel("Fecha (DD/MM/YYYY):"), self.fecha_input)
@@ -30,7 +30,6 @@ class IngresoGastoDialog(QDialog):
             layout.addRow(QLabel("Categoría:"), self.categoria_input)
             layout.addRow(QLabel("¿Es gasto pequeño? (1=Sí, 0=No):"), self.es_gasto_pequeño_input)
 
-        # Botones de acción
         self.submit_button = QPushButton("Registrar")
         self.cancel_button = QPushButton("Cancelar")
         self.submit_button.clicked.connect(self.submit_data)
@@ -38,6 +37,38 @@ class IngresoGastoDialog(QDialog):
 
         layout.addRow(self.submit_button, self.cancel_button)
         self.setLayout(layout)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: rgba(255, 255, 255, 200);
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QLabel {
+                font-size: 16px;
+                color: #333;
+            }
+            QLineEdit {
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 16px;
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #388e3c;
+            }
+        """)
         self.setFixedSize(400, 250)
 
     def submit_data(self):
@@ -56,7 +87,7 @@ class IngresoGastoDialog(QDialog):
             if self.tipo == "Ingreso":
                 self.parent().ingresos_gastos.agregar_ingreso(usuario_id=1, cantidad=cantidad, fecha=fecha)
                 QMessageBox.information(self, "Éxito", "Ingreso registrado correctamente.")
-            else:
+            else: 
                 categoria = self.categoria_input.text()
                 try:
                     es_gasto_pequeño = bool(int(self.es_gasto_pequeño_input.text()))
@@ -128,6 +159,30 @@ class FinanceApp(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
+        self.setStyleSheet("""
+            QMainWindow {
+                background-image: url('C:\homero.jpg');  
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+            QPushButton {
+                background-color: rgba(98, 0, 234, 0.8);
+                color: white;
+                border: none;
+                padding: 15px;
+                font-size: 18px;
+                border-radius: 5px;
+                margin-bottom: 15px;
+            }
+            QPushButton:hover {
+                background-color: rgba(55, 0, 179, 0.8);
+            }
+            QPushButton:pressed {
+                background-color: rgba(3, 218, 197, 0.8);
+            }
+        """)
+
         self.setFixedSize(600, 400)
         self.notifications.iniciar_notificaciones(usuario_id=1)
 
@@ -149,7 +204,6 @@ class FinanceApp(QMainWindow):
         gastos = self.ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
         dialog.mostrar_progreso(ingresos, gastos)
         dialog.exec_()
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
