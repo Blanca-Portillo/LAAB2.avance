@@ -143,6 +143,29 @@ class AnalisisCategoria:
         plt.show()
 
 
+class SugerenciasAhorroDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Sugerencias de Ahorro y Metas")
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        
+        self.sugerencias_label = QLabel("Calculando sugerencias de ahorro...")
+        layout.addWidget(self.sugerencias_label)
+
+        self.setLayout(layout)
+        self.setFixedSize(400, 200)
+
+    def mostrar_sugerencias(self, ingresos, gastos):
+        ahorro_sugerido = ingresos - gastos
+        if ahorro_sugerido > 0:
+            self.sugerencias_label.setText(f"Puedes ahorrar ${ahorro_sugerido} este mes.")
+        else:
+            self.sugerencias_label.setText("Considera reducir tus gastos para ahorrar más.")
+
+
 class FinanceApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -162,16 +185,19 @@ class FinanceApp(QMainWindow):
         self.expense_button = QPushButton("Registrar Gasto")
         self.analysis_button = QPushButton("Análisis de Gastos")
         self.progress_button = QPushButton("Ver Progreso Mensual")
+        self.savings_button = QPushButton("Ver Sugerencias de Ahorro y Metas")
 
         self.income_button.clicked.connect(self.open_income_dialog)
         self.expense_button.clicked.connect(self.open_expense_dialog)
         self.analysis_button.clicked.connect(self.show_analysis)
         self.progress_button.clicked.connect(self.show_monthly_progress)
+        self.savings_button.clicked.connect(self.show_savings_suggestions)
 
         layout.addWidget(self.income_button)
         layout.addWidget(self.expense_button)
         layout.addWidget(self.analysis_button)
         layout.addWidget(self.progress_button)
+        layout.addWidget(self.savings_button)
 
         container = QWidget()
         container.setLayout(layout)
@@ -223,8 +249,17 @@ class FinanceApp(QMainWindow):
         dialog.mostrar_progreso(ingresos, gastos)
         dialog.exec_()
 
+    def show_savings_suggestions(self):
+        dialog = SugerenciasAhorroDialog(self)
+        mes_actual = datetime.now().month
+        ingresos = self.ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
+        gastos = self.ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
+        dialog.mostrar_sugerencias(ingresos, gastos)
+        dialog.exec_()
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    mainWindow = FinanceApp()
-    mainWindow.show()
+    window = FinanceApp()
+    window.show()
     sys.exit(app.exec_())
