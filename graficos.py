@@ -28,5 +28,20 @@ class AnalisisCategoria:
         # Agregar título con el total de dinero gastado y el ahorro
         plt.title(f"Distribución de Gastos por Categoría\nTotal Gastado: ${total_gastos:,.2f} | Ahorro: ${ahorro:,.2f}")
         
-        # Mostrar la gráfica
+        # Mostrar la gráfica de distribución de gastos
+        plt.show()
+
+        # Crear un gráfico de barras para mostrar Ingresos, Gastos y Ahorro
+        plt.figure(figsize=(8,6))
+        categorias = ['Ingresos', 'Gastos', 'Ahorro']
+        valores = [total_ingresos, total_gastos, ahorro]
+
+        plt.bar(categorias, valores, color=['green', 'red', 'blue'])
+
+        # Agregar título y etiquetas al gráfico de barras
+        plt.title("Resumen Financiero")
+        plt.ylabel("Monto en $")
+        plt.xlabel("Categorías")
+
+        # Mostrar el gráfico de barras
         plt.show()
