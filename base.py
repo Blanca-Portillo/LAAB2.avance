@@ -44,6 +44,32 @@ class BaseDeDatos:
                 );
             ''')
             
+            # Crear la tabla de metas de ahorro
+            self.conn.execute('''
+                CREATE TABLE IF NOT EXISTS metas_ahorro (
+                    id INTEGER PRIMARY KEY,
+                    usuario_id INTEGER NOT NULL,
+                    nombre_meta TEXT NOT NULL,
+                    cantidad_meta REAL NOT NULL,
+                    fecha_limite TEXT NOT NULL,
+                    progreso REAL NOT NULL DEFAULT 0,
+                    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+                );
+            ''')
+            
+            # Crear la tabla de presupuestos
+            self.conn.execute('''
+                CREATE TABLE IF NOT EXISTS presupuestos (
+                    id INTEGER PRIMARY KEY,
+                    usuario_id INTEGER NOT NULL,
+                    categoria TEXT NOT NULL,
+                    monto_asignado REAL NOT NULL,
+                    fecha_inicio TEXT NOT NULL,
+                    fecha_fin TEXT NOT NULL,
+                    FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+                );
+            ''')
+
             self.conn.commit()
         except sqlite3.Error as e:
             print(f"Error al crear tablas: {e}")
@@ -108,44 +134,119 @@ class BaseDeDatos:
         except sqlite3.Error as e:
             print(f"Error al agregar gasto: {e}")
 
-    def obtener_ingresos_mes(self, usuario_id, mes):
+    def agregar_meta_ahorro(self, usuario_id, nombre_meta, cantidad_meta, fecha_limite):
         try:
-            # Obtener los ingresos de un usuario en un mes específico
-            cursor = self.conn.execute(''' 
-                SELECT SUM(cantidad) FROM ingresos
-                WHERE usuario_id = ? AND strftime('%m', fecha) = ?
-            ''', (usuario_id, str(mes).zfill(2)))
-            return cursor.fetchone()[0] or 0  # Si no hay ingresos, devuelve 0
+            # Validar formato de fecha
+            datetime.strptime(fecha_limite, '%Y-%m-%d')
+            
+            self.conn.execute('''
+                INSERT INTO metas_ahorro (usuario_id, nombre_meta, cantidad_meta, fecha_limite)
+                VALUES (?, ?, ?, ?)
+            ''', (usuario_id, nombre_meta, cantidad_meta, fecha_limite))
+            self.conn.commit()
+            print("Meta de ahorro registrada correctamente.")
+        except ValueError:
+            print("Error: La fecha debe estar en el formato YYYY-MM-DD.")
         except sqlite3.Error as e:
-            print(f"Error al obtener ingresos: {e}")
-            return 0
+            print(f"Error al agregar meta de ahorro: {e}")
 
-    def obtener_gastos_mes(self, usuario_id, mes):
+    def obtener_metas_ahorro(self, usuario_id):
         try:
-            # Obtener los gastos de un usuario en un mes específico
-            cursor = self.conn.execute(''' 
-                SELECT SUM(cantidad) FROM gastos
-                WHERE usuario_id = ? AND strftime('%m', fecha) = ?
-            ''', (usuario_id, str(mes).zfill(2)))
-            return cursor.fetchone()[0] or 0  # Si no hay gastos, devuelve 0
+            cursor = self.conn.execute('''
+                SELECT nombre_meta, cantidad_meta, fecha_limite, progreso FROM metas_ahorro
+                WHERE usuario_id = ?
+            ''', (usuario_id,))
+            return cursor.fetchall()
         except sqlite3.Error as e:
-            print(f"Error al obtener gastos: {e}")
-            return 0
+            print(f"Error al obtener metas de ahorro: {e}")
+            return []
+
+    def actualizar_progreso_meta(self, usuario_id, meta_id, progreso):
+        try:
+            self.conn.execute('''
+                UPDATE metas_ahorro
+                SET progreso = ?
+                WHERE usuario_id = ? AND id = ?
+            ''', (progreso, usuario_id, meta_id))
+            self.conn.commit()
+            print("Progreso de la meta actualizado correctamente.")
+        except sqlite3.Error as e:
+            print(f"Error al actualizar el progreso de la meta: {e}")
+
+    def agregar_presupuesto(self, usuario_id, categoria, monto_asignado, fecha_inicio, fecha_fin):
+        try:
+            # Validar formato de fecha
+            datetime.strptime(fecha_inicio, '%Y-%m-%d')
+            datetime.strptime(fecha_fin, '%Y-%m-%d')
+            
+            self.conn.execute('''
+                INSERT INTO presupuestos (usuario_id, categoria, monto_asignado, fecha_inicio, fecha_fin)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (usuario_id, categoria, monto_asignado, fecha_inicio, fecha_fin))
+            self.conn.commit()
+            print("Presupuesto registrado correctamente.")
+        except ValueError:
+            print("Error: La fecha debe estar en el formato YYYY-MM-DD.")
+        except sqlite3.Error as e:
+            print(f"Error al agregar presupuesto: {e}")
+
+    def obtener_presupuesto(self, usuario_id):
+        try:
+            cursor = self.conn.execute('''
+                SELECT categoria, monto_asignado FROM presupuestos
+                WHERE usuario_id = ?
+            ''', (usuario_id,))
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Error al obtener el presupuesto: {e}")
+            return []
 
     def obtener_gastos_por_categoria(self, usuario_id):
         try:
-            # Obtener los gastos por categoría para un usuario
-            cursor = self.conn.execute(''' 
+            cursor = self.conn.execute('''
                 SELECT categoria, SUM(cantidad) FROM gastos
                 WHERE usuario_id = ?
                 GROUP BY categoria
             ''', (usuario_id,))
-            return cursor.fetchall()  # Devuelve una lista de tuplas (categoria, cantidad total)
+            return cursor.fetchall()
         except sqlite3.Error as e:
-            print(f"Error al obtener gastos por categoría: {e}")
+            print(f"Error al obtener los gastos por categoría: {e}")
             return []
 
     def cerrar_conexion(self):
         """Cerrar la conexión a la base de datos."""
         if self.conn:
             self.conn.close()
+
+# Ejemplo de uso
+bd = BaseDeDatos()
+
+# Agregar un usuario
+bd.agregar_usuario("usuario1", "contraseña123")
+
+# Agregar un ingreso
+bd.agregar_ingreso(1, 5000, "2024-11-16")
+
+# Agregar un gasto
+bd.agregar_gasto(1, 200, "Alimentación", False, "2024-11-16")
+
+# Agregar una meta de ahorro
+bd.agregar_meta_ahorro(1, "Fondo de emergencia", 10000, "2025-01-01")
+
+# Agregar un presupuesto
+bd.agregar_presupuesto(1, "Alimentación", 500, "2024-11-01", "2024-11-30")
+
+# Obtener gastos por categoría
+gastos_categoria = bd.obtener_gastos_por_categoria(1)
+print(gastos_categoria)
+
+# Obtener metas de ahorro
+metas = bd.obtener_metas_ahorro(1)
+print(metas)
+
+# Obtener presupuesto
+presupuesto = bd.obtener_presupuesto(1)
+print(presupuesto)
+
+# Cerrar conexión
+bd.cerrar_conexion()
