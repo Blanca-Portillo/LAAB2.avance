@@ -21,7 +21,7 @@ class AnalisisCategoria:
         wedges, texts, autotexts = ax.pie(df_gastos['Total'], 
                                           labels=df_gastos['Categoria'], 
                                           autopct='%1.1f%%', 
-                                          startangle=40, 
+                                          startangle=20, 
                                           colors=plt.cm.Paired.colors,
                                           wedgeprops={"edgecolor": "black"})  # Borde para cada segmento
 
