@@ -60,3 +60,4 @@ class IngresosGastos:
             "gastos": gastos,
             "balance": balance
         }
+
