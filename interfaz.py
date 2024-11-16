@@ -6,8 +6,6 @@ from base import BaseDeDatos
 from ingreso import IngresosGastos
 from graficos import AnalisisCategoria
 from alertas import Notificaciones
-from datetime import datetime
-from PyQt5.QtCore import QTimer  # Importar el temporizador
 
 class IngresoGastoDialog(QDialog):
     def __init__(self, tipo, parent=None):
@@ -31,16 +29,18 @@ class IngresoGastoDialog(QDialog):
             layout.addRow(QLabel("Categoría:"), self.categoria_input)
             layout.addRow(QLabel("¿Es gasto pequeño? (1=Sí, 0=No):"), self.es_gasto_pequeño_input)
 
+        # Botones de acción
         self.submit_button = QPushButton("Registrar")
         self.cancel_button = QPushButton("Cancelar")
         self.submit_button.clicked.connect(self.submit_data)
-        self.cancel_button.clicked.connect(self.reject)
+        self.cancel_button.clicked.connect(self.reject)  # Cancelar acción
 
         layout.addRow(self.submit_button, self.cancel_button)
+
         self.setLayout(layout)
         self.setStyleSheet("""
             QDialog {
-                background-color: rgba(255, 255, 255, 200);
+                background-color: rgba(255, 255, 255, 200);  /* Fondo blanco con algo de transparencia */
                 border-radius: 10px;
                 padding: 10px;
             }
@@ -70,17 +70,21 @@ class IngresoGastoDialog(QDialog):
                 background-color: #388e3c;
             }
         """)
-        self.setFixedSize(400, 250)
+
+        # Establecer el tamaño fijo para el diálogo
+        self.setFixedSize(400, 250)  # Tamaño fijo para el diálogo
 
     def submit_data(self):
         try:
             cantidad = float(self.cantidad_input.text())
             fecha = self.fecha_input.text()
 
+            # Validar la fecha
             if not self.validar_fecha(fecha):
                 QMessageBox.warning(self, "Error", "La fecha no es válida. Debe ser en formato DD/MM/YYYY.")
-                return
+                return  # No guardar los datos si la fecha es incorrecta
 
+            # Validar que la cantidad sea un número positivo
             if cantidad <= 0:
                 QMessageBox.warning(self, "Error", "La cantidad debe ser un número positivo.")
                 return
@@ -91,7 +95,7 @@ class IngresoGastoDialog(QDialog):
             else: 
                 categoria = self.categoria_input.text()
                 try:
-                    es_gasto_pequeño = bool(int(self.es_gasto_pequeño_input.text()))
+                    es_gasto_pequeño = bool(int(self.es_gasto_pequeño_input.text()))  # Validar 1 o 0
                 except ValueError:
                     QMessageBox.warning(self, "Error", "Por favor, ingrese 1 o 0 para el campo de gasto pequeño.")
                     return
@@ -103,49 +107,11 @@ class IngresoGastoDialog(QDialog):
             QMessageBox.warning(self, "Error", "Por favor ingrese valores válidos para cantidad.")
 
     def validar_fecha(self, fecha):
+        # Validar fecha en formato DD/MM/YYYY
         patron = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
         if re.match(patron, fecha):
             return True
         return False
-
-
-class ProgresoMensualDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Progreso Mensual")
-        self.initUI()
-
-        # Configurar el temporizador
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.actualizar_progreso)
-        self.timer.start(1000)  # Actualización cada 1 segundo
-
-        self.ingresos = 0
-        self.gastos = 0
-
-    def initUI(self):
-        layout = QVBoxLayout()
-        self.progreso_label = QLabel("Cargando progreso mensual...")
-        layout.addWidget(self.progreso_label)
-        self.setLayout(layout)
-        self.setFixedSize(400, 200)
-
-    def mostrar_progreso(self, ingresos, gastos):
-        self.ingresos = ingresos
-        self.gastos = gastos
-        self.progreso_label.setText(f"Ingresos: ${self.ingresos}\nGastos: ${self.gastos}")
-
-    def actualizar_progreso(self):
-        mes_actual = datetime.now().month
-        self.ingresos = self.parent().ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
-        self.gastos = self.parent().ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
-        self.progreso_label.setText(f"Ingresos: ${self.ingresos}\nGastos: ${self.gastos}")
-
-    def closeEvent(self, event):
-        """Detener el temporizador cuando el diálogo se cierre."""
-        self.timer.stop()
-        super().closeEvent(event)
-
 
 class FinanceApp(QMainWindow):
     def __init__(self):
@@ -162,26 +128,25 @@ class FinanceApp(QMainWindow):
         self.setWindowTitle("Sistema de Administración y Ahorro de Dinero")
         layout = QVBoxLayout()
 
+        # Botones para registrar ingresos, gastos y ver análisis
         self.income_button = QPushButton("Registrar Ingreso")
         self.expense_button = QPushButton("Registrar Gasto")
         self.analysis_button = QPushButton("Análisis de Gastos")
-        self.progress_button = QPushButton("Ver Progreso Mensual")
 
         self.income_button.clicked.connect(self.open_income_dialog)
         self.expense_button.clicked.connect(self.open_expense_dialog)
         self.analysis_button.clicked.connect(self.show_analysis)
-        self.progress_button.clicked.connect(self.show_monthly_progress)
 
         layout.addWidget(self.income_button)
         layout.addWidget(self.expense_button)
         layout.addWidget(self.analysis_button)
-        layout.addWidget(self.progress_button)
 
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-        self.setStyleSheet("""
+        # Aplicar estilos
+        self.setStyleSheet ("""
             QMainWindow {
                 background-image: url('C:\homero.jpg');  
                 background-position: center;
@@ -189,7 +154,7 @@ class FinanceApp(QMainWindow):
                 background-size: cover;
             }
             QPushButton {
-                background-color: rgba(98, 0, 234, 0.8);
+                background-color: rgba(98, 0, 234, 0.8);  /* Botones con fondo semitransparente */
                 color: white;
                 border: none;
                 padding: 15px;
@@ -205,7 +170,10 @@ class FinanceApp(QMainWindow):
             }
         """)
 
-        self.setFixedSize(600, 400)
+        # Establecer el tamaño fijo para la ventana principal
+        self.setFixedSize(600, 400)  # Tamaño fijo para la ventana principal
+
+        # Iniciar las notificaciones
         self.notifications.iniciar_notificaciones(usuario_id=1)
 
     def open_income_dialog(self):
@@ -218,14 +186,6 @@ class FinanceApp(QMainWindow):
 
     def show_analysis(self):
         self.analisis.graficar_distribucion_gastos(usuario_id=1)
-
-    def show_monthly_progress(self):
-        dialog = ProgresoMensualDialog(self)
-        mes_actual = datetime.now().month
-        ingresos = self.ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
-        gastos = self.ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
-        dialog.mostrar_progreso(ingresos, gastos)
-        dialog.exec_()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
