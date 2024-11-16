@@ -21,27 +21,24 @@ class AnalisisCategoria:
         # Calcular el ahorro (ingresos - gastos)
         ahorro = total_ingresos - total_gastos
 
-        # Crear el gráfico de torta para la distribución de los gastos
-        plt.figure(figsize=(8,6))
-        plt.pie(df_gastos['Total'], labels=df_gastos['Categoria'], autopct='%1.1f%%')
-        
-        # Agregar título con el total de dinero gastado y el ahorro
-        plt.title(f"Distribución de Gastos por Categoría\nTotal Gastado: ${total_gastos:,.2f} | Ahorro: ${ahorro:,.2f}")
-        
-        # Mostrar la gráfica de distribución de gastos
-        plt.show()
+        # Crear una figura con dos subgráficos (uno para el gráfico de torta y otro para el gráfico de barras)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))  # 1 fila, 2 columnas
 
-        # Crear un gráfico de barras para mostrar Ingresos, Gastos y Ahorro
-        plt.figure(figsize=(8,6))
+        # Gráfico de torta (pie chart) para la distribución de gastos
+        ax1.pie(df_gastos['Total'], labels=df_gastos['Categoria'], autopct='%1.1f%%', startangle=90)
+        ax1.set_title(f"Distribución de Gastos\nTotal Gastado: ${total_gastos:,.2f}")
+
+        # Gráfico de barras para mostrar Ingresos, Gastos y Ahorro
         categorias = ['Ingresos', 'Gastos', 'Ahorro']
         valores = [total_ingresos, total_gastos, ahorro]
+        
+        ax2.bar(categorias, valores, color=['green', 'red', 'blue'])
+        ax2.set_title("Resumen Financiero")
+        ax2.set_ylabel("Monto en $")
+        ax2.set_xlabel("Categorías")
 
-        plt.bar(categorias, valores, color=['green', 'red', 'blue'])
+        # Ajustar el espacio entre los gráficos
+        plt.tight_layout()
 
-        # Agregar título y etiquetas al gráfico de barras
-        plt.title("Resumen Financiero")
-        plt.ylabel("Monto en $")
-        plt.xlabel("Categorías")
-
-        # Mostrar el gráfico de barras
+        # Mostrar los gráficos
         plt.show()

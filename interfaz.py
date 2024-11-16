@@ -29,11 +29,50 @@ class IngresoGastoDialog(QDialog):
             layout.addRow(QLabel("Categoría:"), self.categoria_input)
             layout.addRow(QLabel("¿Es gasto pequeño? (1=Sí, 0=No):"), self.es_gasto_pequeño_input)
 
+        # Botones de acción
         self.submit_button = QPushButton("Registrar")
+        self.cancel_button = QPushButton("Cancelar")
         self.submit_button.clicked.connect(self.submit_data)
-        layout.addRow(self.submit_button)
+        self.cancel_button.clicked.connect(self.reject)  # Cancelar acción
+
+        layout.addRow(self.submit_button, self.cancel_button)
 
         self.setLayout(layout)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: rgba(255, 255, 255, 200);  /* Fondo blanco con algo de transparencia */
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QLabel {
+                font-size: 16px;
+                color: #333;
+            }
+            QLineEdit {
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                font-size: 16px;
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #388e3c;
+            }
+        """)
+
+        # Establecer el tamaño fijo para el diálogo
+        self.setFixedSize(400, 250)  # Tamaño fijo para el diálogo
 
     def submit_data(self):
         try:
@@ -45,18 +84,27 @@ class IngresoGastoDialog(QDialog):
                 QMessageBox.warning(self, "Error", "La fecha no es válida. Debe ser en formato DD/MM/YYYY.")
                 return  # No guardar los datos si la fecha es incorrecta
 
+            # Validar que la cantidad sea un número positivo
+            if cantidad <= 0:
+                QMessageBox.warning(self, "Error", "La cantidad debe ser un número positivo.")
+                return
+
             if self.tipo == "Ingreso":
                 self.parent().ingresos_gastos.agregar_ingreso(usuario_id=1, cantidad=cantidad, fecha=fecha)
-                QMessageBox.information(self, "Éxito", "Ingreso registrado.")
+                QMessageBox.information(self, "Éxito", "Ingreso registrado correctamente.")
             else: 
                 categoria = self.categoria_input.text()
-                es_gasto_pequeño = bool(int(self.es_gasto_pequeño_input.text()))  
+                try:
+                    es_gasto_pequeño = bool(int(self.es_gasto_pequeño_input.text()))  # Validar 1 o 0
+                except ValueError:
+                    QMessageBox.warning(self, "Error", "Por favor, ingrese 1 o 0 para el campo de gasto pequeño.")
+                    return
                 self.parent().ingresos_gastos.agregar_gasto(usuario_id=1, cantidad=cantidad, 
                                                              categoria=categoria, es_gasto_pequeño=es_gasto_pequeño, fecha=fecha)
-                QMessageBox.information(self, "Éxito", "Gasto registrado.")
+                QMessageBox.information(self, "Éxito", "Gasto registrado correctamente.")
             self.close()
         except ValueError:
-            QMessageBox.warning(self, "Error", "Por favor ingrese valores válidos.")
+            QMessageBox.warning(self, "Error", "Por favor ingrese valores válidos para cantidad.")
 
     def validar_fecha(self, fecha):
         # Validar fecha en formato DD/MM/YYYY
@@ -80,6 +128,7 @@ class FinanceApp(QMainWindow):
         self.setWindowTitle("Sistema de Administración y Ahorro de Dinero")
         layout = QVBoxLayout()
 
+        # Botones para registrar ingresos, gastos y ver análisis
         self.income_button = QPushButton("Registrar Ingreso")
         self.expense_button = QPushButton("Registrar Gasto")
         self.analysis_button = QPushButton("Análisis de Gastos")
@@ -96,6 +145,35 @@ class FinanceApp(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
+        # Aplicar estilos
+        self.setStyleSheet ("""
+            QMainWindow {
+                background-image: url('C:\homero.jpg');  
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+            QPushButton {
+                background-color: rgba(98, 0, 234, 0.8);  /* Botones con fondo semitransparente */
+                color: white;
+                border: none;
+                padding: 15px;
+                font-size: 18px;
+                border-radius: 5px;
+                margin-bottom: 15px;
+            }
+            QPushButton:hover {
+                background-color: rgba(55, 0, 179, 0.8);
+            }
+            QPushButton:pressed {
+                background-color: rgba(3, 218, 197, 0.8);
+            }
+        """)
+
+        # Establecer el tamaño fijo para la ventana principal
+        self.setFixedSize(600, 400)  # Tamaño fijo para la ventana principal
+
+        # Iniciar las notificaciones
         self.notifications.iniciar_notificaciones(usuario_id=1)
 
     def open_income_dialog(self):
