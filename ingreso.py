@@ -49,3 +49,14 @@ class IngresosGastos:
         '''
         result = self.bd.conn.execute(query, (usuario_id, str(mes).zfill(2)))
         return result.fetchone()[0] or 0  # Devuelve la suma de los gastos o 0 si no hay gastos
+
+    def obtener_progreso_mensual(self, usuario_id, mes):
+        """Obtiene el progreso mensual en forma de ingresos y gastos."""
+        ingresos = self.obtener_ingresos_mes(usuario_id, mes)
+        gastos = self.obtener_gastos_mes(usuario_id, mes)
+        balance = ingresos - gastos
+        return {
+            "ingresos": ingresos,
+            "gastos": gastos,
+            "balance": balance
+        }
