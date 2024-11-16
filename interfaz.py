@@ -2,9 +2,9 @@
 
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
-from ingreso_gasto_dialog import IngresoGastoDialog
+
 from base import BaseDeDatos
-from ingreso_gastos import IngresosGastos
+from ingreso import IngresosGastos
 from graficos import AnalisisCategoria
 from alertas import Notificaciones
 
