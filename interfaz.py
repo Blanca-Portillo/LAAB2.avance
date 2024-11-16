@@ -7,7 +7,8 @@ from ingreso import IngresosGastos
 from graficos import AnalisisCategoria
 from alertas import Notificaciones
 from datetime import datetime
-from PyQt5.QtCore import QTimer  # Importar el temporizador
+import matplotlib.pyplot as plt
+
 
 class IngresoGastoDialog(QDialog):
     def __init__(self, tipo, parent=None):
@@ -38,7 +39,7 @@ class IngresoGastoDialog(QDialog):
 
         layout.addRow(self.submit_button, self.cancel_button)
         self.setLayout(layout)
-        self.setStyleSheet("""
+        self.setStyleSheet(r"""
             QDialog {
                 background-color: rgba(255, 255, 255, 200);
                 border-radius: 10px;
@@ -115,14 +116,6 @@ class ProgresoMensualDialog(QDialog):
         self.setWindowTitle("Progreso Mensual")
         self.initUI()
 
-        # Configurar el temporizador
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.actualizar_progreso)
-        self.timer.start(1000)  # Actualización cada 1 segundo
-
-        self.ingresos = 0
-        self.gastos = 0
-
     def initUI(self):
         layout = QVBoxLayout()
         self.progreso_label = QLabel("Cargando progreso mensual...")
@@ -131,20 +124,23 @@ class ProgresoMensualDialog(QDialog):
         self.setFixedSize(400, 200)
 
     def mostrar_progreso(self, ingresos, gastos):
-        self.ingresos = ingresos
-        self.gastos = gastos
-        self.progreso_label.setText(f"Ingresos: ${self.ingresos}\nGastos: ${self.gastos}")
+        self.progreso_label.setText(f"Ingresos: ${ingresos}\nGastos: ${gastos}")
 
-    def actualizar_progreso(self):
-        mes_actual = datetime.now().month
-        self.ingresos = self.parent().ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
-        self.gastos = self.parent().ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
-        self.progreso_label.setText(f"Ingresos: ${self.ingresos}\nGastos: ${self.gastos}")
 
-    def closeEvent(self, event):
-        """Detener el temporizador cuando el diálogo se cierre."""
-        self.timer.stop()
-        super().closeEvent(event)
+class AnalisisCategoria:
+    def __init__(self, bd):
+        self.bd = bd
+
+    def mostrar_grafico(self):
+        # Ejemplo de gráfico de barras con categorías de gasto
+        categorias = ['Comida', 'Transporte', 'Entretenimiento', 'Salud']
+        valores = [100, 50, 75, 20]  # Valores de ejemplo
+
+        plt.bar(categorias, valores)
+        plt.title("Análisis de Gastos por Categoría")
+        plt.xlabel("Categoría")
+        plt.ylabel("Cantidad")
+        plt.show()
 
 
 class FinanceApp(QMainWindow):
@@ -181,9 +177,9 @@ class FinanceApp(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-        self.setStyleSheet("""
+        self.setStyleSheet(r"""
             QMainWindow {
-                background-image: url('C:\homero.jpg');  
+                background-image: url('C:/homero.jpg');  
                 background-position: center;
                 background-repeat: no-repeat;
                 background-size: cover;
@@ -217,7 +213,7 @@ class FinanceApp(QMainWindow):
         dialog.exec_()
 
     def show_analysis(self):
-        self.analisis.graficar_distribucion_gastos(usuario_id=1)
+        self.analisis.mostrar_grafico()  # Mostrar el gráfico de análisis
 
     def show_monthly_progress(self):
         dialog = ProgresoMensualDialog(self)
