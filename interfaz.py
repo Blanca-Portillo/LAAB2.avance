@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget,
-                             QLineEdit, QDialog, QLabel, QFormLayout, QMessageBox, QTableWidget, QTableWidgetItem)
+                             QLineEdit, QDialog, QLabel, QFormLayout, QMessageBox)
 import re  # Para validar la fecha
 from base import BaseDeDatos
 from ingreso import IngresosGastos
@@ -147,37 +147,6 @@ class ProgresoMensualDialog(QDialog):
         super().closeEvent(event)
 
 
-class AnalisisGastosDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Análisis Detallado de Gastos")
-        self.initUI()
-
-    def initUI(self):
-        layout = QVBoxLayout()
-
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Fecha", "Categoría", "Cantidad", "Gasto Pequeño"])
-
-        # Cargar datos de los gastos
-        self.cargar_datos()
-
-        layout.addWidget(self.table)
-        self.setLayout(layout)
-        self.setFixedSize(600, 400)
-
-    def cargar_datos(self):
-        gastos = self.parent().ingresos_gastos.obtener_gastos(usuario_id=1)
-        self.table.setRowCount(len(gastos))
-
-        for row, gasto in enumerate(gastos):
-            self.table.setItem(row, 0, QTableWidgetItem(gasto["fecha"]))
-            self.table.setItem(row, 1, QTableWidgetItem(gasto["categoria"]))
-            self.table.setItem(row, 2, QTableWidgetItem(str(gasto["cantidad"])))
-            self.table.setItem(row, 3, QTableWidgetItem(str(gasto["es_gasto_pequeno"])))
-
-
 class FinanceApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -196,19 +165,16 @@ class FinanceApp(QMainWindow):
         self.income_button = QPushButton("Registrar Ingreso")
         self.expense_button = QPushButton("Registrar Gasto")
         self.analysis_button = QPushButton("Análisis de Gastos")
-        self.analysis_detail_button = QPushButton("Análisis Detallado de Gastos")
         self.progress_button = QPushButton("Ver Progreso Mensual")
 
         self.income_button.clicked.connect(self.open_income_dialog)
         self.expense_button.clicked.connect(self.open_expense_dialog)
         self.analysis_button.clicked.connect(self.show_analysis)
-        self.analysis_detail_button.clicked.connect(self.show_detailed_analysis)
         self.progress_button.clicked.connect(self.show_monthly_progress)
 
         layout.addWidget(self.income_button)
         layout.addWidget(self.expense_button)
         layout.addWidget(self.analysis_button)
-        layout.addWidget(self.analysis_detail_button)
         layout.addWidget(self.progress_button)
 
         container = QWidget()
@@ -223,23 +189,24 @@ class FinanceApp(QMainWindow):
                 background-size: cover;
             }
             QPushButton {
-                background-color: #4CAF50;
+                background-color: rgba(98, 0, 234, 0.8);
                 color: white;
-                padding: 10px 20px;
-                border-radius: 10px;
+                border: none;
+                padding: 15px;
                 font-size: 18px;
+                border-radius: 5px;
+                margin-bottom: 15px;
             }
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: rgba(55, 0, 179, 0.8);
+            }
+            QPushButton:pressed {
+                background-color: rgba(3, 218, 197, 0.8);
             }
         """)
 
-    def show_analysis(self):
-        self.analisis.mostrar_grafico()
-
-    def show_detailed_analysis(self):
-        dialog = AnalisisGastosDialog(self)
-        dialog.exec_()
+        self.setFixedSize(600, 400)
+        self.notifications.iniciar_notificaciones(usuario_id=1)
 
     def open_income_dialog(self):
         dialog = IngresoGastoDialog("Ingreso", self)
@@ -249,13 +216,19 @@ class FinanceApp(QMainWindow):
         dialog = IngresoGastoDialog("Gasto", self)
         dialog.exec_()
 
+    def show_analysis(self):
+        self.analisis.graficar_distribucion_gastos(usuario_id=1)
+
     def show_monthly_progress(self):
         dialog = ProgresoMensualDialog(self)
-        dialog.show()
+        mes_actual = datetime.now().month
+        ingresos = self.ingresos_gastos.obtener_ingresos_mes(usuario_id=1, mes=mes_actual)
+        gastos = self.ingresos_gastos.obtener_gastos_mes(usuario_id=1, mes=mes_actual)
+        dialog.mostrar_progreso(ingresos, gastos)
+        dialog.exec_()
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = FinanceApp()
-    window.show()
+    mainWindow = FinanceApp()
+    mainWindow.show()
     sys.exit(app.exec_())
