@@ -1,6 +1,5 @@
 
 
-
 import datetime
 
 class IngresosGastos:
@@ -8,9 +7,9 @@ class IngresosGastos:
         self.bd = bd
 
     def validar_fecha(self, fecha):
-        """Verifica si la fecha tiene el formato correcto (YYYY-MM-DD)."""
+        """Verifica si la fecha tiene el formato correcto (YYYY/MM/DD)."""
         try:
-            datetime.datetime.strptime(fecha, "%Y-%m-%d")
+            datetime.datetime.strptime(fecha, "%d/%m/%yyyy")
             return True
         except ValueError:
             return False
