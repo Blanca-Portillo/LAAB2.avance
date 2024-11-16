@@ -15,7 +15,7 @@ class AnalisisCategoria:
         total_gastos = df_gastos['Total'].sum()
 
         # Crear el gráfico de pastel (pie chart) para la distribución de gastos
-        fig, ax = plt.subplots(figsize=(8, 8))
+        fig, ax = plt.subplots(figsize=(10, 10))
 
         ax.pie(df_gastos['Total'], labels=df_gastos['Categoria'], autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
         ax.set_title(f"Distribución de Gastos\nTotal Gastado: ${total_gastos:,.2f}")
