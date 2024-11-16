@@ -8,7 +8,6 @@ from graficos import AnalisisCategoria
 from alertas import Notificaciones
 from datetime import datetime
 from PyQt5.QtCore import QTimer  # Importar el temporizador
-from PyQt5.QtGui import QPixmap
 
 class IngresoGastoDialog(QDialog):
     def __init__(self, tipo, parent=None):
@@ -71,7 +70,7 @@ class IngresoGastoDialog(QDialog):
                 background-color: #388e3c;
             }
         """)
-        self.setFixedSize(400, 250)  # Establecer un tamaño fijo y no redimensionable
+        self.setFixedSize(400, 250)
 
     def submit_data(self):
         try:
@@ -129,7 +128,7 @@ class ProgresoMensualDialog(QDialog):
         self.progreso_label = QLabel("Cargando progreso mensual...")
         layout.addWidget(self.progreso_label)
         self.setLayout(layout)
-        self.setFixedSize(400, 200)  # Establecer un tamaño fijo y no redimensionable
+        self.setFixedSize(400, 200)
 
     def mostrar_progreso(self, ingresos, gastos):
         self.ingresos = ingresos
@@ -166,7 +165,7 @@ class AnalisisGastosDialog(QDialog):
 
         layout.addWidget(self.table)
         self.setLayout(layout)
-        self.setFixedSize(600, 400)  # Establecer un tamaño fijo y no redimensionable
+        self.setFixedSize(600, 400)
 
     def cargar_datos(self):
         gastos = self.parent().ingresos_gastos.obtener_gastos(usuario_id=1)
@@ -216,35 +215,31 @@ class FinanceApp(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-        # Establecer imagen de fondo
-        background = QPixmap('C:\homero.jpg')  # Ruta de la imagen
-        background_label = QLabel(self)
-        background_label.setPixmap(background)
-        background_label.setGeometry(0, 0, self.width(), self.height())
-        background_label.setScaledContents(True)
-
         self.setStyleSheet("""
             QMainWindow {
-                background-color: rgba(255, 255, 255, 150);
+                background-image: url('C:\homero.jpg');  
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: cover;
             }
             QPushButton {
-                font-size: 16px;
                 background-color: #4CAF50;
                 color: white;
-                border: none;
                 padding: 10px 20px;
-                border-radius: 5px;
-                margin-top: 10px;
+                border-radius: 10px;
+                font-size: 18px;
             }
             QPushButton:hover {
                 background-color: #45a049;
             }
-            QPushButton:pressed {
-                background-color: #388e3c;
-            }
         """)
 
-        self.setFixedSize(400, 400)  # Establecer un tamaño fijo y no redimensionable
+    def show_analysis(self):
+        self.analisis.mostrar_grafico()
+
+    def show_detailed_analysis(self):
+        dialog = AnalisisGastosDialog(self)
+        dialog.exec_()
 
     def open_income_dialog(self):
         dialog = IngresoGastoDialog("Ingreso", self)
@@ -254,19 +249,9 @@ class FinanceApp(QMainWindow):
         dialog = IngresoGastoDialog("Gasto", self)
         dialog.exec_()
 
-    def show_analysis(self):
-        dialog = self.analisis.mostrar_analisis(self)
-        dialog.exec_()
-
-    def show_detailed_analysis(self):
-        dialog = AnalisisGastosDialog(self)
-        dialog.exec_()
-
     def show_monthly_progress(self):
         dialog = ProgresoMensualDialog(self)
-        dialog.mostrar_progreso(self.ingresos_gastos.obtener_ingresos_mes(1, datetime.now().month), 
-                                self.ingresos_gastos.obtener_gastos_mes(1, datetime.now().month))
-        dialog.exec_()
+        dialog.show()
 
 
 if __name__ == '__main__':
