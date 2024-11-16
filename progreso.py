@@ -1,54 +1,36 @@
-import matplotlib.pyplot as plt
-import pandas as pd
+from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QPushButton
 
-class VistaProgresoMensual:
-    def __init__(self, bd):
-        self.bd = bd
+class ProgresoMensualDialog(QDialog):
+    def __init__(self, usuario_id, mes, ingresos_gastos, parent=None):
+        super().__init__(parent)
+        self.usuario_id = usuario_id
+        self.mes = mes
+        self.ingresos_gastos = ingresos_gastos
+        self.setWindowTitle("Progreso Mensual")
+        self.setFixedSize(400, 200)
 
-    def graficar_progreso_mensual(self, usuario_id):
-        # Realiza la consulta para obtener los ingresos mensuales por usuario
-        consulta_ingresos = '''
-            SELECT strftime('%Y-%m', fecha) AS mes, SUM(cantidad) 
-            FROM ingresos 
-            WHERE usuario_id = ? 
-            GROUP BY mes
-        '''
-        datos_ingresos = self.bd.conn.execute(consulta_ingresos, (usuario_id,)).fetchall()
-        
-        # Realiza la consulta para obtener los gastos mensuales por usuario
-        consulta_gastos = '''
-            SELECT strftime('%Y-%m', fecha) AS mes, SUM(cantidad) 
-            FROM gastos 
-            WHERE usuario_id = ? 
-            GROUP BY mes
-        '''
-        datos_gastos = self.bd.conn.execute(consulta_gastos, (usuario_id,)).fetchall()
+        self.layout = QVBoxLayout()
 
-        # Convertir los datos en DataFrames para trabajar con ellos fácilmente
-        df_ingresos = pd.DataFrame(datos_ingresos, columns=['Mes', 'Ingresos'])
-        df_gastos = pd.DataFrame(datos_gastos, columns=['Mes', 'Gastos'])
+        self.ingresos_label = QLabel("Ingresos: $0")
+        self.gastos_label = QLabel("Gastos: $0")
+        self.progreso_label = QLabel("Progreso del mes: $0")
 
-        # Unir ambos DataFrames por la columna 'Mes'
-        df = pd.merge(df_ingresos, df_gastos, on='Mes', how='outer').fillna(0)
+        # Obtener los datos de ingresos y gastos
+        self.ingresos = self.ingresos_gastos(self.usuario_id, self.mes)
+        self.gastos = self.ingresos_gastos(self.usuario_id, self.mes)
+        self.progreso = self.ingresos - self.gastos
 
-        # Ordenar los datos por mes
-        df['Mes'] = pd.to_datetime(df['Mes'])
-        df = df.sort_values(by='Mes')
+        # Mostrar los datos en las etiquetas
+        self.ingresos_label.setText(f"Ingresos: ${self.ingresos}")
+        self.gastos_label.setText(f"Gastos: ${self.gastos}")
+        self.progreso_label.setText(f"Progreso del mes: ${self.progreso}")
 
-        # Crear el gráfico de barras
-        plt.figure(figsize=(10, 6))
+        self.layout.addWidget(self.ingresos_label)
+        self.layout.addWidget(self.gastos_label)
+        self.layout.addWidget(self.progreso_label)
 
-        # Gráfico de barras para Ingresos y Gastos
-        plt.bar(df['Mes'] - pd.Timedelta(days=15), df['Ingresos'], width=15, label='Ingresos', color='green', alpha=0.7)
-        plt.bar(df['Mes'] + pd.Timedelta(days=15), df['Gastos'], width=15, label='Gastos', color='red', alpha=0.7)
+        self.close_button = QPushButton("Cerrar")
+        self.close_button.clicked.connect(self.close)
+        self.layout.addWidget(self.close_button)
 
-        # Etiquetas y título
-        plt.xlabel('Mes')
-        plt.ylabel('Monto en $')
-        plt.title('Progreso Mensual de Ingresos y Gastos')
-        plt.xticks(df['Mes'], df['Mes'].dt.strftime('%b %Y'), rotation=45)
-        plt.legend()
-
-        # Mostrar el gráfico
-        plt.tight_layout()
-        plt.show()
+        self.setLayout(self.layout)

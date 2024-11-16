@@ -213,8 +213,8 @@ class FinanceApp(QMainWindow):
         
         # Aquí obtenemos los ingresos y gastos del mes actual
         mes_actual = datetime.now().month
-        ingresos = self.ingresos_gastos(usuario_id=1, mes=mes_actual)
-        gastos = self.ingresos_gastos(usuario_id=1, mes=mes_actual)
+        ingresos = self.ingresos_gastos.agregar_ingreso(usuario_id=1, mes=mes_actual)
+        gastos = self.ingresos_gastos.agregar_gasto(usuario_id=1, mes=mes_actual)
         
         dialog.mostrar_progreso(ingresos, gastos)
         dialog.exec_()
