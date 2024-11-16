@@ -1,109 +1,112 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QDateEdit, QFormLayout, QTableWidget, QTableWidgetItem
-from PyQt5.QtCore import QDate
-from base import BaseDeDatos  # Asegúrate de que BaseDeDatos está correctamente implementada
 
-class FinanzasApp(QWidget):
+
+import sys
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget,
+                             QLineEdit, QDialog, QLabel, QFormLayout, QMessageBox)
+from base import BaseDeDatos
+from ingreso import IngresosGastos
+from graficos import AnalisisCategoria
+from alertas import Notificaciones
+
+class IngresoGastoDialog(QDialog):
+    def __init__(self, tipo, parent=None):
+        super().__init__(parent)
+        self.tipo = tipo
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(f"Registrar {self.tipo}")
+        layout = QFormLayout()
+
+        self.cantidad_input = QLineEdit()
+        self.fecha_input = QLineEdit()   
+
+        layout.addRow(QLabel("Cantidad:"), self.cantidad_input)
+        layout.addRow(QLabel("Fecha:"), self.fecha_input)
+
+        if self.tipo == "Gasto":
+            self.categoria_input = QLineEdit()
+            self.es_gasto_pequeño_input = QLineEdit()
+            layout.addRow(QLabel("Categoría:"), self.categoria_input)
+            layout.addRow(QLabel("¿Es gasto pequeño? (1=Sí, 0=No):"), self.es_gasto_pequeño_input)
+
+        self.submit_button = QPushButton("Registrar")
+        self.submit_button.clicked.connect(self.submit_data)
+        layout.addRow(self.submit_button)
+
+        self.setLayout(layout)
+
+    def submit_data(self):
+        try:
+            cantidad = float(self.cantidad_input.text())
+            fecha = self.fecha_input.text() 
+            if self.tipo == "Ingreso":
+                self.parent().ingresos_gastos.agregar_ingreso(usuario_id=1, cantidad=cantidad, fecha=fecha)
+                QMessageBox.information(self, "Éxito", "Ingreso registrado.")
+            else: 
+                categoria = self.categoria_input.text()
+                es_gasto_pequeño = bool(int(self.es_gasto_pequeño_input.text()))  
+                self.parent().ingresos_gastos.agregar_gasto(usuario_id=1, cantidad=cantidad, 
+                                                             categoria=categoria, es_gasto_pequeño=es_gasto_pequeño,fecha=fecha)
+                QMessageBox.information(self, "Éxito", "Gasto registrado.")
+            self.close()
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Por favor ingrese valores válidos.")
+
+class FinanceApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.db = BaseDeDatos()
-        self.setWindowTitle('Gestión de Finanzas Personales')
+        
+        self.bd = BaseDeDatos()
 
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        
+        self.ingresos_gastos = IngresosGastos(self.bd)
+        self.analisis = AnalisisCategoria(self.bd)
+        self.notifications = Notificaciones(self.bd, self)
 
-        self.iniciar_interfaz()
+        self.initUI()
 
-    def iniciar_interfaz(self):
-        # Título
-        self.titulo = QLabel('Bienvenido a la Gestión de Finanzas Personales')
-        self.layout.addWidget(self.titulo)
+    def initUI(self):
+        self.setWindowTitle("Sistema de Administración y Ahorro de Dinero")
+        layout = QVBoxLayout()
 
-        # Formulario de ingresos
-        self.form_ingresos = QFormLayout()
-        self.campo_cantidad_ingreso = QLineEdit()
-        self.campo_fecha_ingreso = QDateEdit(calendarPopup=True)
-        self.campo_fecha_ingreso.setDate(QDate.currentDate())
-        self.form_ingresos.addRow('Cantidad de Ingreso:', self.campo_cantidad_ingreso)
-        self.form_ingresos.addRow('Fecha del Ingreso:', self.campo_fecha_ingreso)
+      
+        self.income_button = QPushButton("Registrar Ingreso")
+        self.expense_button = QPushButton("Registrar Gasto")
+        self.analysis_button = QPushButton("Análisis de Gastos")
 
-        self.boton_agregar_ingreso = QPushButton('Agregar Ingreso')
-        self.boton_agregar_ingreso.clicked.connect(self.agregar_ingreso)
-        self.layout.addLayout(self.form_ingresos)
-        self.layout.addWidget(self.boton_agregar_ingreso)
+      
+        self.income_button.clicked.connect(self.open_income_dialog)
+        self.expense_button.clicked.connect(self.open_expense_dialog)
+        self.analysis_button.clicked.connect(self.show_analysis)
 
-        # Formulario de gastos
-        self.form_gastos = QFormLayout()
-        self.campo_cantidad_gasto = QLineEdit()
-        self.campo_categoria_gasto = QLineEdit()
-        self.campo_fecha_gasto = QDateEdit(calendarPopup=True)
-        self.campo_fecha_gasto.setDate(QDate.currentDate())
-        self.campo_gasto_pequeño = QLineEdit()  # Es un campo booleano simple para ejemplo
-        self.form_gastos.addRow('Cantidad de Gasto:', self.campo_cantidad_gasto)
-        self.form_gastos.addRow('Categoría de Gasto:', self.campo_categoria_gasto)
-        self.form_gastos.addRow('Fecha de Gasto:', self.campo_fecha_gasto)
-        self.form_gastos.addRow('¿Es Gasto Pequeño? (True/False):', self.campo_gasto_pequeño)
+      
+        layout.addWidget(self.income_button)
+        layout.addWidget(self.expense_button)
+        layout.addWidget(self.analysis_button)
 
-        self.boton_agregar_gasto = QPushButton('Agregar Gasto')
-        self.boton_agregar_gasto.clicked.connect(self.agregar_gasto)
-        self.layout.addLayout(self.form_gastos)
-        self.layout.addWidget(self.boton_agregar_gasto)
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
 
-        # Tabla de registros
-        self.tabla = QTableWidget()
-        self.layout.addWidget(self.tabla)
+      
+        self.notifications.iniciar_notificaciones(usuario_id=1) 
 
-    def agregar_ingreso(self):
-        try:
-            cantidad = float(self.campo_cantidad_ingreso.text())
-            fecha = self.campo_fecha_ingreso.date().toString('yyyy-MM-dd')
-            self.db.agregar_ingreso(1, cantidad, fecha)  # 1 es el id del usuario
-            self.mostrar_datos()
-        except ValueError:
-            print("Por favor ingresa una cantidad válida.")
+    def open_income_dialog(self):
+        dialog = IngresoGastoDialog("Ingreso", self)
+        dialog.exec_()
 
-    def agregar_gasto(self):
-        try:
-            cantidad = float(self.campo_cantidad_gasto.text())
-            categoria = self.campo_categoria_gasto.text()
-            fecha = self.campo_fecha_gasto.date().toString('yyyy-MM-dd')
-            es_pequeño = self.campo_gasto_pequeño.text() == 'True'
-            self.db.agregar_gasto(1, cantidad, categoria, es_pequeño, fecha)  # 1 es el id del usuario
-            self.mostrar_datos()
-        except ValueError:
-            print("Por favor ingresa datos válidos para el gasto.")
+    def open_expense_dialog(self):
+        dialog = IngresoGastoDialog("Gasto", self)
+        dialog.exec_()
 
-    def mostrar_datos(self):
-        self.tabla.clear()
-        self.tabla.setRowCount(0)
-        self.tabla.setColumnCount(4)
-        self.tabla.setHorizontalHeaderLabels(['Tipo', 'Cantidad', 'Fecha', 'Categoría'])
+    def show_analysis(self):
+        
+        self.analisis.graficar_distribucion_gastos(usuario_id=1)
 
-        # Obtener datos de la base de datos
-        ingresos = self.db.obtener_ingresos(1)  # Método que debes implementar
-        gastos = self.db.obtener_gastos(1)  # Método que debes implementar
-
-        # Mostrar los datos de ingresos
-        for ingreso in ingresos:
-            row_position = self.tabla.rowCount()
-            self.tabla.insertRow(row_position)
-            self.tabla.setItem(row_position, 0, QTableWidgetItem("Ingreso"))
-            self.tabla.setItem(row_position, 1, QTableWidgetItem(str(ingreso['cantidad'])))
-            self.tabla.setItem(row_position, 2, QTableWidgetItem(ingreso['fecha']))
-            self.tabla.setItem(row_position, 3, QTableWidgetItem("N/A"))
-
-        # Mostrar los datos de gastos
-        for gasto in gastos:
-            row_position = self.tabla.rowCount()
-            self.tabla.insertRow(row_position)
-            self.tabla.setItem(row_position, 0, QTableWidgetItem("Gasto"))
-            self.tabla.setItem(row_position, 1, QTableWidgetItem(str(gasto['cantidad'])))
-            self.tabla.setItem(row_position, 2, QTableWidgetItem(gasto['fecha']))
-            self.tabla.setItem(row_position, 3, QTableWidgetItem(gasto['categoria']))
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    ventana = FinanzasApp()
-    ventana.show()
+    mainWindow = FinanceApp()
+    mainWindow.show()
     sys.exit(app.exec_())
